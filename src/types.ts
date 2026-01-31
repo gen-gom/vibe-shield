@@ -1,8 +1,11 @@
+export type Severity = "critical" | "high" | "medium" | "low";
+
 export interface SecurityPattern {
   id: string;
   name: string;
   regex: RegExp;
   fixPrompt: string;
+  severity: Severity;
 }
 
 export interface SecurityIssue {
@@ -12,6 +15,7 @@ export interface SecurityIssue {
   patternName: string;
   fixPrompt: string;
   match: string;
+  severity: Severity;
 }
 
 export interface InitResult {
@@ -22,4 +26,9 @@ export interface InitResult {
 
 export interface IssueSummary {
   [patternName: string]: number;
+}
+
+export interface ScanResult {
+  issues: SecurityIssue[];
+  warnings: string[];
 }

@@ -1,7 +1,7 @@
-import { readFileSync, readdirSync, statSync } from "fs";
+import { readFileSync, readdirSync, statSync, existsSync } from "fs";
 import { join, extname } from "path";
 import { securityPatterns } from "./patterns";
-import type { SecurityIssue } from "./types";
+import type { SecurityIssue, ScanResult } from "./types";
 
 const SUPPORTED_EXTENSIONS = [".js", ".ts", ".jsx", ".tsx", ".py", ".mjs", ".cjs"];
 const IGNORED_DIRS = [
@@ -77,6 +77,52 @@ function getLineNumber(content: string, matchIndex: number): number {
 }
 
 /**
+ * Check if .env is properly ignored in .gitignore
+ */
+function checkGitignore(dir: string): string[] {
+  const warnings: string[] = [];
+  const gitignorePath = join(dir, ".gitignore");
+  const envPath = join(dir, ".env");
+
+  // Only warn if .env exists
+  if (!existsSync(envPath)) {
+    return warnings;
+  }
+
+  if (!existsSync(gitignorePath)) {
+    warnings.push(
+      ".env file exists but no .gitignore found. Create a .gitignore and add .env to prevent committing secrets."
+    );
+    return warnings;
+  }
+
+  try {
+    const gitignoreContent = readFileSync(gitignorePath, "utf-8");
+    const lines = gitignoreContent.split("\n").map((l) => l.trim());
+
+    // Check if .env is ignored (simple check)
+    const envIgnored = lines.some(
+      (line) =>
+        line === ".env" ||
+        line === ".env*" ||
+        line === "*.env" ||
+        line === ".env.local" ||
+        line.startsWith(".env")
+    );
+
+    if (!envIgnored) {
+      warnings.push(
+        ".env file exists but is not in .gitignore. Add .env to .gitignore to prevent committing secrets."
+      );
+    }
+  } catch {
+    // Ignore read errors
+  }
+
+  return warnings;
+}
+
+/**
  * Scan a single file for security issues.
  */
 function scanFile(filePath: string): SecurityIssue[] {
@@ -105,6 +151,7 @@ function scanFile(filePath: string): SecurityIssue[] {
         patternName: pattern.name,
         fixPrompt: pattern.fixPrompt,
         match: matchText.length > 60 ? matchText.substring(0, 60) + "..." : matchText,
+        severity: pattern.severity,
       });
     }
   }
@@ -115,14 +162,19 @@ function scanFile(filePath: string): SecurityIssue[] {
 /**
  * Scan all files in a directory for security issues.
  */
-export function scanFiles(dir: string): SecurityIssue[] {
+export function scanFiles(dir: string): ScanResult {
   const files = collectFiles(dir);
   const allIssues: SecurityIssue[] = [];
+  const warnings = checkGitignore(dir);
 
   for (const file of files) {
     const issues = scanFile(file);
     allIssues.push(...issues);
   }
 
-  return allIssues;
+  // Sort by severity (critical first)
+  const severityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+  allIssues.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
+
+  return { issues: allIssues, warnings };
 }

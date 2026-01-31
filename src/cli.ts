@@ -1,11 +1,16 @@
 #!/usr/bin/env node
 import { scanFiles } from "./scanner";
-import { formatAgentPrompt, generateSummary } from "./prompter";
+import {
+  formatAgentPrompt,
+  generateSummary,
+  generateSeveritySummary,
+  formatJson,
+} from "./prompter";
 import { initVibeShield } from "./init";
 
-const VERSION = "1.0.0";
+const VERSION = "1.1.0";
 
-// Colors (ANSI escape codes for terminal)
+// Colors
 const colors = {
   reset: "\x1b[0m",
   cyan: "\x1b[36m",
@@ -14,6 +19,7 @@ const colors = {
   yellow: "\x1b[33m",
   dim: "\x1b[2m",
   bold: "\x1b[1m",
+  magenta: "\x1b[35m",
 };
 
 function printBanner(): void {
@@ -44,9 +50,13 @@ function printHelp(): void {
   console.log(colors.green + "  help" + colors.reset + colors.dim + "          Show this help message" + colors.reset);
   console.log(colors.green + "  version" + colors.reset + colors.dim + "       Show version number\n" + colors.reset);
 
+  console.log("Options:");
+  console.log(colors.green + "  --json" + colors.reset + colors.dim + "        Output results as JSON\n" + colors.reset);
+
   console.log("Examples:");
   console.log(colors.dim + "  npx vibe-shield" + colors.reset);
   console.log(colors.dim + "  npx vibe-shield scan ./src" + colors.reset);
+  console.log(colors.dim + "  npx vibe-shield scan . --json" + colors.reset);
   console.log(colors.dim + "  npx vibe-shield init\n" + colors.reset);
 }
 
@@ -62,21 +72,38 @@ function runInit(dir: string): void {
 
   if (result.success) {
     console.log(colors.green + "✓ " + colors.reset + result.message);
-    console.log(colors.dim + `  Created: ${result.path}\n` + colors.reset);
+    console.log(colors.dim + `  Path: ${result.path}\n` + colors.reset);
     console.log("Your AI agent will now run vibe-shield before completing tasks.");
     console.log(colors.dim + "Happy vibe coding!\n" + colors.reset);
     process.exit(0);
   } else {
-    console.log(colors.red + "✗ " + colors.reset + result.message);
-    process.exit(1);
+    console.log(colors.yellow + "! " + colors.reset + result.message);
+    process.exit(0);
   }
 }
 
-function runScan(dir: string): void {
-  printBanner();
-  console.log(colors.yellow + `Scanning ${dir}...\n` + colors.reset);
+function runScan(dir: string, jsonOutput: boolean): void {
+  if (!jsonOutput) {
+    printBanner();
+    console.log(colors.yellow + `Scanning ${dir}...\n` + colors.reset);
+  }
 
-  const issues = scanFiles(dir);
+  const { issues, warnings } = scanFiles(dir);
+
+  // JSON output mode
+  if (jsonOutput) {
+    console.log(formatJson(issues, warnings));
+    process.exit(issues.length > 0 ? 1 : 0);
+  }
+
+  // Print warnings
+  if (warnings.length > 0) {
+    console.log(colors.yellow + "Warnings:" + colors.reset);
+    for (const warning of warnings) {
+      console.log(colors.yellow + "  ⚠ " + colors.reset + warning);
+    }
+    console.log("");
+  }
 
   if (issues.length === 0) {
     console.log(colors.green + colors.bold + "✓ SAFE" + colors.reset);
@@ -84,13 +111,30 @@ function runScan(dir: string): void {
     process.exit(0);
   }
 
-  // Print summary
-  const summary = generateSummary(issues);
+  // Print severity summary
+  const severitySummary = generateSeveritySummary(issues);
   console.log(
     colors.red + colors.bold + `✗ Found ${issues.length} security issue${issues.length > 1 ? "s" : ""}\n` + colors.reset
   );
 
-  console.log("Summary:");
+  console.log("By severity:");
+  if (severitySummary.critical > 0) {
+    console.log(colors.red + `  • Critical: ${severitySummary.critical}` + colors.reset);
+  }
+  if (severitySummary.high > 0) {
+    console.log(colors.yellow + `  • High: ${severitySummary.high}` + colors.reset);
+  }
+  if (severitySummary.medium > 0) {
+    console.log(colors.cyan + `  • Medium: ${severitySummary.medium}` + colors.reset);
+  }
+  if (severitySummary.low > 0) {
+    console.log(colors.dim + `  • Low: ${severitySummary.low}` + colors.reset);
+  }
+  console.log("");
+
+  // Print type summary
+  const summary = generateSummary(issues);
+  console.log("By type:");
   for (const [pattern, count] of Object.entries(summary)) {
     console.log(colors.dim + `  • ${pattern}: ${count}` + colors.reset);
   }
@@ -101,21 +145,23 @@ function runScan(dir: string): void {
   console.log(colors.yellow + agentPrompt + colors.reset);
   console.log("");
 
-  // Exit with error code so CI/CD pipelines can catch this
   process.exit(1);
 }
 
 // Parse arguments
 const args = process.argv.slice(2);
-const command = args[0] || "scan";
-const targetDir = args[1] || process.cwd();
+const jsonFlag = args.includes("--json");
+const filteredArgs = args.filter((arg) => !arg.startsWith("--"));
+
+const command = filteredArgs[0] || "scan";
+const targetDir = filteredArgs[1] || process.cwd();
 
 switch (command) {
   case "init":
     runInit(targetDir === process.cwd() ? process.cwd() : targetDir);
     break;
   case "scan":
-    runScan(targetDir);
+    runScan(targetDir, jsonFlag);
     break;
   case "help":
   case "--help":
@@ -132,7 +178,7 @@ switch (command) {
   default:
     // If first arg is a path, treat as scan target
     if (command.startsWith(".") || command.startsWith("/")) {
-      runScan(command);
+      runScan(command, jsonFlag);
     } else {
       console.log(colors.red + `Unknown command: ${command}` + colors.reset);
       console.log(colors.dim + 'Run "vibe-shield help" for usage.\n' + colors.reset);
