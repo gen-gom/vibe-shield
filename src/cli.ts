@@ -208,9 +208,11 @@ switch (command) {
     runHook(args.includes("--uninstall"));
     break;
   case "mcp":
-    // MCP server is started via mcp-server.ts directly
-    console.log(colors.dim + "Starting MCP server... (use Ctrl+C to stop)" + colors.reset);
-    import("./mcp-server").catch(console.error);
+    // MCP server communicates via stdio - no console output allowed
+    import("./mcp-server").catch((err) => {
+      process.stderr.write(`MCP server error: ${err}\n`);
+      process.exit(1);
+    });
     break;
   case "help":
   case "--help":
