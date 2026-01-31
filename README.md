@@ -64,11 +64,12 @@ npx vibe-shield hook --uninstall  # Remove
 
 The hook scans staged files before each commit. Bypass with `git commit --no-verify`.
 
-## MCP Server (Claude/Cursor integration)
+## MCP Server
 
-vibe-shield can run as an MCP server, allowing Claude Desktop and Cursor to call it directly.
+vibe-shield can run as an MCP server, allowing AI tools to call it directly.
 
-**Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+Add to your MCP config (Claude Desktop, Cursor, Antigravity, etc.):
+
 ```json
 {
   "mcpServers": {
@@ -80,17 +81,10 @@ vibe-shield can run as an MCP server, allowing Claude Desktop and Cursor to call
 }
 ```
 
-**Cursor** (`.cursor/mcp.json` in your project):
-```json
-{
-  "mcpServers": {
-    "vibe-shield": {
-      "command": "npx",
-      "args": ["vibe-shield", "mcp"]
-    }
-  }
-}
-```
+Config file locations:
+- **Claude Desktop**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Cursor**: `.cursor/mcp.json` in your project
+- **Antigravity**: `~/.gemini/antigravity/mcp_config.json`
 
 After setup, your AI assistant can use the `vibe_shield_scan` tool to check for security issues.
 
