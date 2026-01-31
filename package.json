@@ -1,0 +1,51 @@
+{
+  "name": "vibe-shield",
+  "version": "1.0.0",
+  "description": "Security scanner for vibe coders - find and fix AI-generated security issues",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "vibe-shield": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "bun run src/cli.ts",
+    "build": "bun build src/cli.ts --outdir dist --target node && bun build src/index.ts --outdir dist --target node && bun x tsc --emitDeclarationOnly",
+    "prepublishOnly": "bun run build",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "keywords": [
+    "security",
+    "scanner",
+    "ai",
+    "vibe-coding",
+    "cli",
+    "cursor",
+    "claude",
+    "devtools",
+    "linter",
+    "vulnerabilities"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/egmzy/vibe-shield.git"
+  },
+  "bugs": {
+    "url": "https://github.com/egmzy/vibe-shield/issues"
+  },
+  "homepage": "https://github.com/egmzy/vibe-shield#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0"
+  }
+}
