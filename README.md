@@ -1,10 +1,27 @@
-# vibe-shield
+<div align="center">
+  <img src=".github/logo.png" alt="vibe-shield" width="128" height="128">
 
-[![npm version](https://img.shields.io/npm/v/vibe-shield.svg)](https://www.npmjs.com/package/vibe-shield)
-[![npm downloads](https://img.shields.io/npm/dm/vibe-shield.svg)](https://www.npmjs.com/package/vibe-shield)
-[![license](https://img.shields.io/npm/l/vibe-shield.svg)](https://github.com/gomzkov/vibe-shield/blob/main/LICENSE)
+  <h1>vibe-shield</h1>
 
-The security layer for Vibe Coding. A single command that scans your repo and generates auto-fix prompts for Cursor and Claude Code to secure your app instantly.
+  <p><strong>The security layer for Vibe Coding.</strong></p>
+
+  <p>
+    <a href="https://www.npmjs.com/package/vibe-shield"><img src="https://img.shields.io/npm/v/vibe-shield.svg" alt="npm version"></a>
+    <a href="https://www.npmjs.com/package/vibe-shield"><img src="https://img.shields.io/npm/dm/vibe-shield.svg" alt="npm downloads"></a>
+    <a href="https://github.com/gomzkov/vibe-shield/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/vibe-shield.svg" alt="license"></a>
+  </p>
+
+  <p>
+    <a href="#usage">Usage</a> •
+    <a href="#what-it-detects">What it detects</a> •
+    <a href="#agent-integration">Agent integration</a> •
+    <a href="#mcp-server">MCP Server</a>
+  </p>
+</div>
+
+<br>
+
+A single command that scans your repo and generates auto-fix prompts for Cursor and Claude Code to secure your app instantly.
 
 ## Usage
 
@@ -103,4 +120,3 @@ bun run build
 ## License
 
 MIT
-
